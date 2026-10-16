@@ -43,6 +43,10 @@
     #message { font-size: 1.3rem; font-weight: 800; min-height: 2em; margin: 20px 0 8px; text-align: center; }
     #message.ok { color: var(--ok); }
     #message.ng { color: var(--ng); }
+    #explain {
+  background: var(--card); border-left: 6px solid var(--sun);
+  border-radius: 8px; padding: 12px 16px; margin: 0 0 16px; line-height: 1.7;
+}
 
     .action {
       display: block; width: 100%; padding: 14px; border: none; border-radius: 999px;
@@ -59,6 +63,7 @@
     <h1 id="question"></h1>
     <div id="choices"></div>
     <p id="message"></p>
+    <p id="explain" hidden></p>
     <button id="next" class="action" hidden>次の問題へ</button>
     <button id="retry" class="action" hidden>もう一度挑戦する</button>
   </main>
@@ -72,13 +77,15 @@
         q: "トラザメじゃないのはどれ?",
         choices: ["images/トラ1.png", "images/トラ2.png", "images/ドチ1.png", "images/トラ3.png"],
         alt:     ["青い丸", "赤い丸", "黄色い丸", "紺色の丸"],
-        answer: 2
+        answer: 2,
+        explain: "ドチザメがいます"
       },
       {
         q: "大気海洋研究所の所長は?",
-        choices: ["images/hyodou1.jpg", "images/hyodo2.png", "images/hyodou3.png", "images/hyodou4.jpg"],
+        choices: ["images/hyodou1.jpg", "images/hyodo2.png", "images/hyoudou3.png", "images/hyodou4.jpg"],
         alt:     ["四角形", "円", "三角形", "星"],
-        answer: 1
+        answer: 1,
+        explain: "1ルイス・クー, 2.大杉連, 4.兵藤晋）"
       },
       {
         q: "夜空に見える月はどれ?",
@@ -141,6 +148,11 @@
         $("message").className = "ng";
       }
 
+      if (item.explain) {
+  $("explain").textContent = item.explain;
+  $("explain").hidden = false;
+}
+
       if (!singleMode) {
         $("next").textContent = current + 1 < quiz.length ? "次の問題へ" : "結果を見る";
         $("next").hidden = false;
@@ -159,6 +171,7 @@
         $("message").textContent = score === quiz.length ? "全問正解です!" : "";
         $("message").className = "ok";
         $("next").hidden = true;
+        $("explain").hidden = true;
         $("retry").hidden = false;
       }
     };
