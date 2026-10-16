@@ -73,25 +73,22 @@
     // choices:選択肢の画像パス / alt:画像の説明(読み上げ・画像が出ないとき用)
     // answer:正解の番号(0から数える)
     const quiz = [
-      {
-        q: "トラザメじゃないのはどれ?",
-        choices: ["images/トラ1.png", "images/トラ2.png", "images/ドチ1.png", "images/トラ3.png"],
-        alt:     ["青い丸", "赤い丸", "黄色い丸", "紺色の丸"],
-        answer: 2,
-        explain: "ドチザメがいます"
-      },
+      { q: "大気海洋研究所が設立されたのは何年?", 
+      choices: ["2006年","2008年", "2010年", "2012年"], 
+      answer: 2,
+      explain: "海洋研究所と気候システム研究センターが統合して設立"
+     },
+      { q: "大気海洋研究所で共同利用可能な調査船は?", 
+      choices: ["白鳳丸", "新青丸", "淡青丸", "よこすか"], 
+      answer: 1,
+      explain: "淡青丸は2013年に退役"
+     },      
       {
         q: "大気海洋研究所の所長は?",
-        choices: ["images/hyodou1.jpg", "images/hyodo2.png", "images/hyoudou3.png", "images/hyodou4.jpg"],
+        choices: ["images/hyodou1.jpg", "images/hyodo2.png", "images/hyoudo3.png", "images/hyodou4.jpg"],
         alt:     ["四角形", "円", "三角形", "星"],
         answer: 1,
         explain: "1ルイス・クー, 2.大杉連, 4.兵藤晋）"
-      },
-      {
-        q: "夜空に見える月はどれ?",
-        choices: ["images/sun.svg", "images/star.svg", "images/yellow.svg", "images/moon.svg"],
-        alt:     ["太陽", "星", "黄色い丸", "三日月"],
-        answer: 3
       }
     ];
 
@@ -114,6 +111,7 @@
       $("message").textContent = "";
       $("message").className = "";
       $("next").hidden = true;
+      $("explain").hidden = true;
 
       const box = $("choices");
       box.innerHTML = "";
@@ -168,10 +166,10 @@
         $("progress").textContent = "結果";
         $("question").textContent = `${quiz.length}問中 ${score}問正解`;
         $("choices").innerHTML = "";
+        $("explain").hidden = true;
         $("message").textContent = score === quiz.length ? "全問正解です!" : "";
         $("message").className = "ok";
-        $("next").hidden = true;
-        $("explain").hidden = true;
+        $("next").hidden = true;        
         $("retry").hidden = false;
       }
     };
