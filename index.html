@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>画像クイズ</title>
+  <title>クイズ</title>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --ink: #1E4D6B;      /* 文字・メイン色 */
-      --sun: #F2C14E;      /* アクセント */
-      --bg: #EEF3F7;       /* 背景 */
+      --ink: #1E4D6B;
+      --sun: #F2C14E;
+      --bg: #EEF3F7;
       --card: #FFFFFF;
-      --ok: #2E8B57;       /* 正解 */
-      --ng: #C8553D;       /* 不正解 */
+      --ok: #2E8B57;
+      --ng: #C8553D;
     }
     * { box-sizing: border-box; }
     body {
@@ -23,30 +23,50 @@
     }
     main { width: 100%; max-width: 520px; }
     #progress { font-weight: 500; opacity: .7; margin: 0 0 4px; }
-    #question { font-size: 1.6rem; font-weight: 800; margin: 0 0 20px; line-height: 1.4; }
+    #question { font-size: 1.6rem; font-weight: 800; margin: 0 0 16px; line-height: 1.4; }
 
-    /* 画像の選択肢:2列のグリッド */
-    #choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* 問題の画像(1枚) */
+    #qimage {
+      display: block; width: 100%; max-height: 280px; object-fit: contain;
+      background: var(--card); border-radius: 16px; padding: 8px; margin: 0 0 20px;
+    }
+
+    /* 選択肢:共通 */
     .choice {
       background: var(--card); border: 4px solid transparent; border-radius: 16px;
-      padding: 8px; cursor: pointer; aspect-ratio: 1;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform .1s;
+      color: var(--ink); font: inherit; cursor: pointer; transition: transform .1s;
     }
-    .choice:hover { transform: scale(1.03); }
+    .choice:hover { transform: scale(1.02); }
     .choice:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
-    .choice img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
     .choice.correct { border-color: var(--ok); }
     .choice.wrong   { border-color: var(--ng); opacity: .6; }
     .choice:disabled { cursor: default; transform: none; }
 
+    /* 選択肢:文章のとき(縦に並べる) */
+    #choices.text { display: flex; flex-direction: column; gap: 10px; }
+    #choices.text .choice { padding: 14px 18px; font-size: 1.1rem; font-weight: 500; text-align: left; }
+
+    /* 選択肢:画像のとき(2列のグリッド) */
+    #choices.image { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    #choices.image .choice {
+      padding: 8px; aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #choices.image .choice img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
+
     #message { font-size: 1.3rem; font-weight: 800; min-height: 2em; margin: 20px 0 8px; text-align: center; }
     #message.ok { color: var(--ok); }
     #message.ng { color: var(--ng); }
+
     #explain {
-  background: var(--card); border-left: 6px solid var(--sun);
-  border-radius: 8px; padding: 12px 16px; margin: 0 0 16px; line-height: 1.7;
+      background: var(--card); border-left: 6px solid var(--sun);
+      border-radius: 8px; padding: 12px 16px; margin: 0 0 16px; line-height: 1.7;
+    }
+    #explain img {
+  display: block; width: 100%; max-height: 240px; object-fit: contain;
+  border-radius: 8px; margin: 0 0 10px;
 }
+#explain p { margin: 0; }
 
     .action {
       display: block; width: 100%; padding: 14px; border: none; border-radius: 999px;
@@ -61,34 +81,53 @@
   <main>
     <p id="progress"></p>
     <h1 id="question"></h1>
+    <img id="qimage" alt="" hidden>
     <div id="choices"></div>
     <p id="message"></p>
-    <p id="explain" hidden></p>
+    <div id="explain" hidden>
+        <img id="explainImg" alt="" hidden>
+          <p id="explainText"></p>
+        </div>
     <button id="next" class="action" hidden>次の問題へ</button>
     <button id="retry" class="action" hidden>もう一度挑戦する</button>
   </main>
 
   <script>
     // ===== 問題データ =====
-    // choices:選択肢の画像パス / alt:画像の説明(読み上げ・画像が出ないとき用)
-    // answer:正解の番号(0から数える)
+    // q        :問題文(必須)
+    // img      :問題の画像(なくてもOK)
+    // choices  :選択肢。文章でも画像パスでもOK
+    // imageChoices: true にすると choices を画像として表示
+    // alt      :画像の説明(なくてもOK)
+    // answer   :正解の番号(0から数える)
+    // explain  :解説文(なくてもOK)
     const quiz = [
-      { q: "大気海洋研究所が設立されたのは何年?", 
-      choices: ["2006年","2008年", "2010年", "2012年"], 
-      answer: 2,
-      explain: "海洋研究所と気候システム研究センターが統合して設立"
-     },
-      { q: "大気海洋研究所で共同利用可能な調査船は?", 
-      choices: ["白鳳丸", "新青丸", "淡青丸", "よこすか"], 
-      answer: 1,
-      explain: "淡青丸は2013年に退役"
-     },      
+      // パターン1:問題文 + 文章の選択肢
+      {
+        q: "トラザメのおなかの中をどうやってしらべる?",
+        choices: ["触診", "エコー検査", "血液検査", "手術"],
+        answer: 1,
+        explain: "エコー検査でサメを傷つけずにおなかの中をしらべます。",
+        explainImg: "images/fuji.jpg",
+        explainImgAlt: "エコーの写真"
+      },
+      // パターン2:問題文 + 画像1枚 + 文章の選択肢
+      {
+        q: "クロホシイシモチのオスは繁殖期にどこが変化する?",
+        img: "images/triangle.svg",
+        imgAlt: "クロホシイシモチの画像",
+        choices: ["目からビームを出す", "顎が白くなって膨らむ", "頭に星の模様が出現する", "ヒレが大きくなる"],
+        answer: 1,
+        explain: "膨らませた口の中で卵を保護します。"
+      },
+      // パターン3:問題文 + 画像の選択肢
       {
         q: "大気海洋研究所の所長は?",
+        imageChoices: true,  
         choices: ["images/hyodou1.jpg", "images/hyodo2.png", "images/hyoudo3.png", "images/hyodou4.jpg"],
-        alt:     ["四角形", "円", "三角形", "星"],
-        answer: 1,
-        explain: "1ルイス・クー, 2.大杉連, 4.兵藤晋）"
+        alt:     ["太陽", "星", "黄色い丸", "三日月"],
+        answer: 3,
+        explain: "1ルイス・クー, 2.大杉連, 4.兵藤晋(教授)"
       }
     ];
 
@@ -110,20 +149,39 @@
       $("question").textContent = item.q;
       $("message").textContent = "";
       $("message").className = "";
-      $("next").hidden = true;
       $("explain").hidden = true;
+      $("next").hidden = true;
 
+      // 問題の画像(あるときだけ表示)
+      const qimg = $("qimage");
+      if (item.img) {
+        qimg.src = item.img;
+        qimg.alt = item.imgAlt || "問題の画像";
+        qimg.hidden = false;
+      } else {
+        qimg.hidden = true;
+        qimg.removeAttribute("src");
+      }
+
+      // 選択肢(文章か画像かで並べ方を変える)
       const box = $("choices");
       box.innerHTML = "";
-      item.choices.forEach((src, i) => {
+      box.className = item.imageChoices ? "image" : "text";
+
+      item.choices.forEach((choice, i) => {
         const btn = document.createElement("button");
         btn.className = "choice";
-        const img = document.createElement("img");
-        img.src = src;
-        img.alt = item.alt ? item.alt[i] : `選択肢${i + 1}`;
-        // 画像が見つからないときはファイル名を表示
-        img.onerror = () => { btn.textContent = `画像が見つかりません:${src}`; };
-        btn.appendChild(img);
+
+        if (item.imageChoices) {
+          const img = document.createElement("img");
+          img.src = choice;
+          img.alt = item.alt ? item.alt[i] : `選択肢${i + 1}`;
+          img.onerror = () => { btn.textContent = `画像が見つかりません:${choice}`; };
+          btn.appendChild(img);
+        } else {
+          btn.textContent = choice;
+        }
+
         btn.onclick = () => checkAnswer(i);
         box.appendChild(btn);
       });
@@ -133,8 +191,8 @@
     function checkAnswer(i) {
       const item = quiz[current];
       const buttons = $("choices").querySelectorAll(".choice");
-      buttons.forEach(b => b.disabled = true);       // 二度押し防止
-      buttons[item.answer].classList.add("correct"); // 正解に緑の枠
+      buttons.forEach(b => b.disabled = true);
+      buttons[item.answer].classList.add("correct");
 
       if (i === item.answer) {
         score++;
@@ -146,8 +204,19 @@
         $("message").className = "ng";
       }
 
-      if (item.explain) {
-  $("explain").textContent = item.explain;
+      if (item.explain || item.explainImg) {
+  $("explainText").textContent = item.explain || "";
+
+  const eimg = $("explainImg");
+  if (item.explainImg) {
+    eimg.src = item.explainImg;
+    eimg.alt = item.explainImgAlt || "解説の画像";
+    eimg.hidden = false;
+  } else {
+    eimg.hidden = true;
+    eimg.removeAttribute("src");
+  }
+
   $("explain").hidden = false;
 }
 
@@ -165,11 +234,12 @@
       } else {
         $("progress").textContent = "結果";
         $("question").textContent = `${quiz.length}問中 ${score}問正解`;
+        $("qimage").hidden = true;
         $("choices").innerHTML = "";
         $("explain").hidden = true;
         $("message").textContent = score === quiz.length ? "全問正解です!" : "";
         $("message").className = "ok";
-        $("next").hidden = true;        
+        $("next").hidden = true;
         $("retry").hidden = false;
       }
     };
